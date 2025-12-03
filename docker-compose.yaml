@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  minio:
+    image: docker.io/minio/minio        # ✅ הוספנו docker.io
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+  mysql:
+    image: docker.io/mysql:8.0          # ✅ שימי לב להבדל פה
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: rss_project
+      MYSQL_USER: hodaya
+      MYSQL_PASSWORD: hodaya123
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db_init:/docker-entrypoint-initdb.d
+
+volumes:
+  minio_data:
+  mysql_data:

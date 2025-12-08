@@ -7,7 +7,7 @@ import boto3
 import pandas as pd
 from dateutil import parser
 import json
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine, MetaData, text
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.engine import Engine
 
@@ -313,6 +313,26 @@ def upsert_to_mysql(df: pd.DataFrame, table_name: str = TABLE_NAME) -> None:
         engine.dispose()
 
 
+def call_normalize_rss_data(procedure_name: str = "NormalizeRSSData") -> None:
+    """
+    Execute MySQL stored procedure to normalize RSS data.
+    
+    Args:
+        procedure_name: Name of the stored procedure to call
+    """
+    engine = init_mysql_engine(echo=False)
+    
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(f"CALL {procedure_name}()"))
+        print(f"✅ Successfully executed stored procedure: {procedure_name}")
+    except Exception as e:
+        print(f"❌ Error executing stored procedure {procedure_name}: {e}")
+        raise
+    finally:
+        engine.dispose()
+
+
 # ============================================================================
 # Main Execution
 # ============================================================================
@@ -330,6 +350,8 @@ def main() -> None:
         
         if not df.empty:
             upsert_to_mysql(df)
+            # Execute stored procedure to normalize data
+            call_normalize_rss_data()
         else:
             print("⚠️ No data to upsert")
             

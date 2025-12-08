@@ -1,0 +1,181 @@
+import streamlit as st
+import datetime
+import pandas as pd
+import random
+
+# 1. הגדרת עמוד בסיסית
+st.set_page_config(
+    page_title="Streamlit News",
+    page_icon="📰",
+    layout="wide"
+)
+
+# 2. פונקציה ליצירת נתונים מדומים
+def get_fake_news():
+    # הוספת עמודת ID ייחודית
+    categories = ["טכנולוגיה", "ספורט", "פיננסים", "עולם"]
+    articles = [
+        {
+            "id": 1,
+            "title": "הבינה המלאכותית כובשת את העולם",
+            "category": "טכנולוגיה",
+            "author": "דני דיגיטל",
+            "date": datetime.date(2023, 11, 1),
+            "image": "https://picsum.photos/400/200?random=1",
+            "summary": "התפתחויות חדשות בתחום ה-LLM משנות את הדרך בה אנו עובדים...",
+            "content": "כאן יופיע התוכן המלא של הכתבה. הבינה המלאכותית ממשיכה להפתיע..."
+        },
+        {
+            "id": 2,
+            "title": "מניית הטכנולוגיה הגדולה צונחת",
+            "category": "פיננסים",
+            "author": "רונית רווחים",
+            "date": datetime.date(2023, 11, 2),
+            "image": "https://picsum.photos/400/200?random=2",
+            "summary": "לאחר פרסום הדו''חות הרבעוניים, המשקיעים מגיבים בחשש.",
+            "content": "השוק הגיב בירידות שערים חדות לאחר שהחברה פספסה את תחזית הרווח..."
+        },
+        {
+            "id": 3,
+            "title": "שיא חדש בריצת 100 מטר",
+            "category": "ספורט",
+            "author": "יוסי ספרינט",
+            "date": datetime.date(2023, 11, 3),
+            "image": "https://picsum.photos/400/200?random=3",
+            "summary": "האצן האלמוני הפתיע את כולם בתחרות הבינלאומית.",
+            "content": "באירוע מרגש באצטדיון הלאומי, נשבר שיא בן עשור..."
+        },
+        {
+            "id": 4,
+            "title": "השקת מכשיר הסמארטפון החדש",
+            "category": "טכנולוגיה",
+            "author": "גדי גאדג'ט",
+            "date": datetime.date(2023, 11, 4),
+            "image": "https://picsum.photos/400/200?random=4",
+            "summary": "האם המצלמה החדשה באמת משנה את כללי המשחק?",
+            "content": "החברה השיקה את דגם הפרו שלה הכולל עדשת זום חדשנית..."
+        },
+        {
+            "id": 5,
+            "title": "משבר האקלים: ועידה בינלאומית",
+            "category": "עולם",
+            "author": "אדם טבע",
+            "date": datetime.date(2023, 11, 5),
+            "image": "https://picsum.photos/400/200?random=5",
+            "summary": "מנהיגי העולם מתכנסים לדון בעתיד כדור הארץ.",
+            "content": "הועידה תתמקד בפתרונות אנרגיה ירוקה והפחתת פליטות..."
+        }
+    ]
+    return pd.DataFrame(articles)
+
+# טעינת הנתונים
+df = get_fake_news()
+
+# **********************************************
+## 1. אתחול מצב (Session State) לשמירה
+# **********************************************
+if 'saved_articles' not in st.session_state:
+    st.session_state.saved_articles = set() # שימוש ב-Set לאחסון מזהי ה-ID הייחודיים
+
+# פונקציות לטיפול בשמירה/הסרה (כדי להבטיח אתחול מחדש נכון)
+def toggle_save_article(article_id):
+    if article_id in st.session_state.saved_articles:
+        st.session_state.saved_articles.remove(article_id)
+    else:
+        st.session_state.saved_articles.add(article_id)
+
+# 3. בניית סרגל הצד (Sidebar)
+with st.sidebar:
+    st.title("🔍 סינון וניווט")
+    
+    # הוספת תיבת סימון להצגת כתבות שמורות בלבד
+    show_saved_only = st.checkbox("הצג כתבות שמורות בלבד", key="show_saved")
+    
+    st.markdown("---")
+    
+    # סינון לפי קטגוריה (מופיע רק אם לא מסננים רק כתבות שמורות)
+    if not show_saved_only:
+        category_filter = st.multiselect(
+            "בחר קטגוריות:",
+            options=df["category"].unique(),
+            default=df["category"].unique()
+        )
+    else:
+        # אם מציגים רק שמורים, אין טעם בפילטר קטגוריות
+        category_filter = df["category"].unique() 
+        
+    st.markdown("---")
+    st.write(f"📝 כתבות שמורות: {len(st.session_state.saved_articles)}")
+    st.write("פותח באמצעות Python & Streamlit")
+
+# 4. איזור ראשי - כותרת וחיפוש
+st.title("📰  אתר החדשות ועדכונים שוטפים")
+st.caption("אתר חדשות דינאמי לדוגמה")
+
+# שורת חיפוש
+search_query = st.text_input("חפש כותרת או תוכן...", "")
+
+# 5. לוגיקה של סינון
+filtered_df = df
+
+# סינון לפי כתבות שמורות
+if st.session_state.get("show_saved"):
+    # סינון ה-DataFrame רק לכתבות שה-ID שלהן נמצא ב-st.session_state.saved_articles
+    filtered_df = filtered_df[filtered_df["id"].isin(st.session_state.saved_articles)]
+    st.header("⭐ הכתבות השמורות שלי")
+else:
+    # סינון רגיל לפי קטגוריה
+    filtered_df = filtered_df[filtered_df["category"].isin(category_filter)]
+
+
+if search_query:
+    filtered_df = filtered_df[
+        filtered_df["title"].str.contains(search_query, case=False) |
+        filtered_df["summary"].str.contains(search_query, case=False)
+    ]
+
+# 6. הצגת הכתבות
+st.markdown("---")
+
+if filtered_df.empty:
+    st.warning("לא נמצאו כתבות התואמות את הסינון או החיפוש שלך.")
+else:
+    # לולאה שעוברת על הכתבות ומציגה אותן
+    for index, row in filtered_df.iterrows():
+        article_id = row['id']
+        is_saved = article_id in st.session_state.saved_articles
+        
+        # יצירת קונטיינר לכל כתבה כדי לשמור על סדר
+        with st.container():
+            col1, col2 = st.columns([1, 3]) # יחס של 1 ל-3 בין תמונה לטקסט
+            
+            with col1:
+                st.image(row['image'], width=200)
+            
+            with col2:
+                # כותרת
+                st.subheader(f"{row['title']}")
+                
+                # תגיות קטנות מעל הטקסט
+                st.markdown(f"**{row['category']}** | 🗓️ {row['date']} | ✍️ {row['author']}")
+                st.write(row["summary"])
+                
+                # יצירת כפתור שמירה ליד כפתור קרא עוד
+                save_col, expander_col = st.columns([1, 3])
+                
+                with save_col:
+                    button_text = "⭐ שמור" if not is_saved else "🗑️ הסר שמירה"
+                    st.button(
+                        button_text,
+                        key=f"save_btn_{article_id}",
+                        on_click=toggle_save_article,
+                        args=(article_id,),
+                        type="primary" if not is_saved else "secondary"
+                    )
+                
+                with expander_col:
+                    # כפתור "קרא עוד" שנפתח (Expander)
+                    with st.expander("קרא עוד"):
+                        st.write(row["content"])
+            
+            st.markdown("---") # קו מפריד בין כתבות

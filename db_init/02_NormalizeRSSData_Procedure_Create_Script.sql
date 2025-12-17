@@ -1,5 +1,3 @@
-USE rss_project;
-
 DELIMITER $$
 
 DROP PROCEDURE IF EXISTS NormalizeRSSData$$
@@ -37,14 +35,15 @@ BEGIN
     -- ==========================================================
     -- A. Insert unique tags
     INSERT IGNORE INTO RSS_Tags (tag_name)
-    SELECT DISTINCT TRIM(BOTH '"' FROM j.tag_name)
+    SELECT DISTINCT JSON_UNQUOTE(j.tag_name)
     FROM rss_raw_items r,
     JSON_TABLE(
+        -- FIX: Unquote the input so MySQL sees an Array, not a String
         JSON_UNQUOTE(r.tags), 
         "$[*]" COLUMNS (tag_name VARCHAR(255) PATH "$")
     ) j
     WHERE r.tags IS NOT NULL 
-      AND JSON_LENGTH(r.tags) > 0
+      AND JSON_LENGTH(JSON_UNQUOTE(r.tags)) > 0 -- Ensure we check the unquoted length
       AND r.id NOT IN (SELECT raw_item_id FROM processed_raw_items);
 
     -- B. Link Items to Tags
@@ -55,12 +54,13 @@ BEGIN
     FROM rss_raw_items r
     JOIN RSS_Items i ON r.id = i.raw_guid
     JOIN JSON_TABLE(
+        -- FIX: Unquote the input here too
         JSON_UNQUOTE(r.tags), 
         "$[*]" COLUMNS (tag_name VARCHAR(255) PATH "$")
     ) j
-    JOIN RSS_Tags t ON TRIM(BOTH '"' FROM j.tag_name) = t.tag_name
+    JOIN RSS_Tags t ON JSON_UNQUOTE(j.tag_name) = t.tag_name
     WHERE r.tags IS NOT NULL 
-      AND JSON_LENGTH(r.tags) > 0
+      AND JSON_LENGTH(JSON_UNQUOTE(r.tags)) > 0
       AND r.id NOT IN (SELECT raw_item_id FROM processed_raw_items);
 
     -- ==========================================================

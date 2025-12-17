@@ -14,7 +14,7 @@ with DAG(
     dag_id="rss_etl_pipeline",
     default_args=default_args,
     description="ETL pipeline for RSS feeds: extract → transform/load",
-    schedule_interval="0 * * * *",
+    schedule_interval="*/5 * * * *",
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["rss", "etl", "naya_project"],

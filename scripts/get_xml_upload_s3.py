@@ -126,41 +126,69 @@ def extract_source_and_category(soup: BeautifulSoup, category: str) -> Tuple[str
     Returns:
         Tuple of (source, category) as cleaned filenames
     """
+
+    feed_url = None
     channel = soup.find("channel")
     if not channel:
         return "unknown", "unknown"
     
-    link_elem = channel.find("link")
-    title_elem = channel.find("title")
-    
-    if not link_elem or not title_elem:
-        return "unknown", "unknown"
-    
-    link = (link_elem.text or "").strip()
-    title = (title_elem.text or "").strip()
-    
-    netloc = urlparse(link).netloc.lower()
+    atom_link = channel.find("atom:link", {"rel": "self"})
+    if atom_link and atom_link.get("href"):
+        feed_url = atom_link["href"]
+
+    # Fallback: regular <link>
+    if not feed_url:
+        link_elem = channel.find("link")
+        if link_elem and link_elem.text:
+            feed_url = link_elem.text.strip()
+
+    parsed = urlparse(feed_url or "")
+    netloc = parsed.netloc.lower().replace("www.", "")
+
+    # ----------------------
+    # 2. Detect source
+    # ----------------------
     domain_map = {
-        "ynet": "ynet",
-        "maariv": "maariv",
-        "walla": "walla",
-        "mako": "mako",
+        "ynet.co.il": "ynet",
+        "maariv.co.il": "maariv",
+        "walla.co.il": "walla",
+        "mako.co.il": "mako",
+        "haaretz.co.il": "haaretz",
     }
-    source = next((mapped for key, mapped in domain_map.items() if key in netloc), "")
+
+    source = next(
+        (v for k, v in domain_map.items() if k in netloc),
+        None
+    )
+
+    if not source and netloc:
+        source = netloc.split(".")[0]
     if not source:
-        # fallback: use the domain prefix if exists, otherwise unknown
-        source = netloc.split(".")[0] if netloc else "unknown"
-    
-    # Prefer category from title pattern only if title starts with the source.
-    # Otherwise, keep the full title as category.
-    if source and title.lower().startswith(source) and " - " in title:
-        category_value = title.split(" - ", 1)[1].strip()
+        source = "unknown"
+
+    # ----------------------
+    # 3. Resolve category
+    # ----------------------
+    title_elem = channel.find("title")
+    title = (title_elem.text or "").strip() if title_elem else ""
+
+    if category:
+        category_value = category
     elif title:
+        lowered = title.lower()
+
+        # remove source prefix if exists
+        if lowered.startswith(source):
+            title = title[len(source):].lstrip(" -|:")
+
         category_value = title
     else:
-        category_value = category
-    
-    return clean_for_filename(source or "unknown"), clean_for_filename(category_value or "unknown")
+        category_value = "unknown"
+
+    return (
+        clean_for_filename(source),
+        clean_for_filename(category_value),
+    )
 
 
 def parse_rss_feed(url: str) -> Optional[BeautifulSoup]:

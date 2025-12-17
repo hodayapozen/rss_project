@@ -7,7 +7,6 @@ RSS_FEEDS = {
     # opinions
     "opinions_all": "https://www.ynet.co.il/Integration/StoryRss194.xml",
 
-    # (אין קישור עבור יומני סבר — הדף כנראה ללא RSS)
 
     # consumerism
     "consumer_all": "https://www.ynet.co.il/Integration/StoryRss5363.xml",
@@ -72,10 +71,17 @@ RSS_FEEDS = {
     "ynetnews_opinion": "https://www.ynet.co.il/3rdparty/mobile/rss/ynetnews/3084/",
     "ynetnews_culture": "https://www.ynet.co.il/3rdparty/mobile/rss/ynetnews/3086/",
     "ynetnews_jewish": "https://www.ynet.co.il/3rdparty/mobile/rss/ynetnews/3443/",
-
+    # Walla RSS feeds
     "כל החדשות העדכניות בתחומי צבא ושירותי הביטחון": "https://rss.walla.co.il/feed/2689",
     "חדשות בארץ - כל החדשות והעדכונים 24/7 אונליין": "https://rss.walla.co.il/feed/1",
     "חדשות בעולם - כל העדכונים והדיווחים מסביב לעולם": "https://rss.walla.co.il/feed/2",
     "כתבות בנושאי חדשות ועדכונים עסקיים": "https://rss.walla.co.il/feed/557",
+    "כל החדשות בתחום הפוליטי מדיני": "https://rss.walla.co.il/feed/2686",
+    "רישיונות, ביטוח ומשפט": "https://rss.walla.co.il/feed/4715",
+    
+    "חדשות - פוליטי" : "https://rcs.mako.co.il/rss/news-military.xml",
+    "חדשות מהארץ והעולם" : "https://www.maariv.co.il/rss/rsschadashot",
+    "כלכלה" : "https://www.maariv.co.il/rss/rssfeedsasakim"
+    
 }
 

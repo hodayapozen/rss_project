@@ -1,0 +1,83 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: docker.io/library/mysql:8.0
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: rss_project
+      MYSQL_USER: hodaya
+      MYSQL_PASSWORD: hodaya123
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../db_init:/docker-entrypoint-initdb.d
+
+  postgres:
+    image: docker.io/library/postgres:15
+    container_name: airflow_postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow_pgdata:/var/lib/postgresql/data
+
+  airflow-webserver:
+    image: docker.io/apache/airflow:2.9.0
+    container_name: airflow_webserver
+    depends_on:
+      - postgres
+      - mysql
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__WEBSERVER__SECRET_KEY: super-secret-key-123456
+      _PIP_ADDITIONAL_REQUIREMENTS: "pymysql boto3"
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: rss_project
+      DB_USER: hodaya
+      DB_PASSWORD: hodaya123
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: us-east-1
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ../scripts:/opt/airflow/scripts
+    ports:
+      - "8088:8080"
+    command: webserver
+
+  airflow-scheduler:
+    image: docker.io/apache/airflow:2.9.0
+    container_name: airflow_scheduler
+    depends_on:
+      - postgres
+      - mysql
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__WEBSERVER__SECRET_KEY: super-secret-key-123456
+      _PIP_ADDITIONAL_REQUIREMENTS: "pymysql boto3"
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: rss_project
+      DB_USER: hodaya
+      DB_PASSWORD: hodaya123
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: us-east-1
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ../scripts:/opt/airflow/scripts
+    command: scheduler
+
+volumes:
+  airflow_pgdata:
+  mysql_data:

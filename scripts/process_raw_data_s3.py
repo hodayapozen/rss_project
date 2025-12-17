@@ -2,6 +2,7 @@
 Process RSS raw data from S3 and upsert to MySQL database.
 """
 from typing import List, Tuple, Optional, Dict, Any
+import os
 from bs4 import BeautifulSoup
 import boto3
 import pandas as pd
@@ -19,12 +20,13 @@ TABLE_NAME = "rss_raw_items"
 
 # Database configuration
 DB_CONFIG = {
-    "user": "hodaya",
-    "password": "hodaya123",
-    "host": "localhost",
-    "port": 3307,
-    "database": "rss_project"
+    "host": os.getenv("DB_HOST", "localhost"),
+    "port": os.getenv("DB_PORT", 3307),
+    "database": os.getenv("DB_NAME", "rss_project"),
+    "user": os.getenv("DB_USER", "hodaya"),
+    "password": os.getenv("DB_PASSWORD", "hodaya123"),
 }
+
 
 DB_CONNECTION_STRING = (
     f"mysql+pymysql://{DB_CONFIG['user']}:{DB_CONFIG['password']}"

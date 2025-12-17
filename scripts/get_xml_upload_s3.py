@@ -16,7 +16,6 @@ from rss_feeds import RSS_FEEDS
 # Configuration
 # ============================================================================
 RAW_DATA_BUCKET = "rss-raw-data"
-#ITEMS_BUCKET = "rss-raw-items"
 
 # Request configuration
 REQUEST_TIMEOUT = 30  # seconds
@@ -35,7 +34,7 @@ def init_s3_client() -> boto3.client:
     s3 = boto3.client("s3")
     my_region = s3.meta.region_name or "us-east-1"
 
-    for bucket in [RAW_DATA_BUCKET]: #, ITEMS_BUCKET]:
+    for bucket in [RAW_DATA_BUCKET]:
         existing = [b["Name"] for b in s3.list_buckets().get("Buckets", [])]
         if bucket not in existing:
             print(f"🪣 Creating bucket: {bucket} in region: {my_region}")
@@ -137,23 +136,31 @@ def extract_source_and_category(soup: BeautifulSoup, category: str) -> Tuple[str
     if not link_elem or not title_elem:
         return "unknown", "unknown"
     
-    link = link_elem.text
-    title = title_elem.text
+    link = (link_elem.text or "").strip()
+    title = (title_elem.text or "").strip()
     
     netloc = urlparse(link).netloc.lower()
+    domain_map = {
+        "ynet": "ynet",
+        "maariv": "maariv",
+        "walla": "walla",
+        "mako": "mako",
+    }
+    source = next((mapped for key, mapped in domain_map.items() if key in netloc), "")
+    if not source:
+        # fallback: use the domain prefix if exists, otherwise unknown
+        source = netloc.split(".")[0] if netloc else "unknown"
     
-    if "ynet" in netloc:
-        source = "ynet"
-        # Extract category from title (format: "Ynet - Category")
-        category = title.split(" - ")[1] if " - " in title else category
-    elif "walla" in netloc:
-        source = "walla"
-        category = title
+    # Prefer category from title pattern only if title starts with the source.
+    # Otherwise, keep the full title as category.
+    if source and title.lower().startswith(source) and " - " in title:
+        category_value = title.split(" - ", 1)[1].strip()
+    elif title:
+        category_value = title
     else:
-        source = "unknown"
-        category = title
+        category_value = category
     
-    return clean_for_filename(source), clean_for_filename(category)
+    return clean_for_filename(source or "unknown"), clean_for_filename(category_value or "unknown")
 
 
 def parse_rss_feed(url: str) -> Optional[BeautifulSoup]:
@@ -169,10 +176,13 @@ def parse_rss_feed(url: str) -> Optional[BeautifulSoup]:
     try:
         response = requests.get(url, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
-        
-        xml_data = response.text.encode("utf-8")
-        soup = BeautifulSoup(xml_data, "xml")
-        
+        if not response.encoding:
+            response.encoding = response.apparent_encoding or "utf-8"
+
+        # Use raw bytes so BeautifulSoup can honor XML-declared encoding
+        xml_bytes = response.content
+        soup = BeautifulSoup(xml_bytes, "xml")
+
         return soup
     except requests.exceptions.RequestException as e:
         print(f"❌ Failed to fetch RSS feed from {url}: {e}")

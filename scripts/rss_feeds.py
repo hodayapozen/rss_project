@@ -52,51 +52,49 @@ RSS_FEEDS = {
     # ======================
     # YNETNEWS (EN)
     # ======================
-    "ynetnews_news": "https://www.ynet.co.il/3rdparty/mobile/rss/ynetnews/3082/",
-    "ynetnews_updates": "https://www.ynet.co.il/3rdparty/mobile/rss/ynetnews/3089/",
-    "ynetnews_opinion": "https://www.ynet.co.il/3rdparty/mobile/rss/ynetnews/3084/",
-    "ynetnews_culture": "https://www.ynet.co.il/3rdparty/mobile/rss/ynetnews/3086/",
-    "ynetnews_jewish": "https://www.ynet.co.il/3rdparty/mobile/rss/ynetnews/3443/",
+    "news_english": "https://www.ynet.co.il/3rdparty/mobile/rss/ynetnews/3082/",
+    "updates_english": "https://www.ynet.co.il/3rdparty/mobile/rss/ynetnews/3089/",
+    "opinion_english": "https://www.ynet.co.il/3rdparty/mobile/rss/ynetnews/3084/",
+    "culture_english": "https://www.ynet.co.il/3rdparty/mobile/rss/ynetnews/3086/",
+    "jewish_english": "https://www.ynet.co.il/3rdparty/mobile/rss/ynetnews/3443/",
 
     # ======================
     # WALLA
     # ======================
-    "walla_news_main": "https://rss.walla.co.il/feed/1",
-    "walla_news_breaking": "https://rss.walla.co.il/feed/22",
-    "walla_news_military": "https://rss.walla.co.il/feed/2689",
-    "walla_news_political": "https://rss.walla.co.il/feed/2686",
-    "walla_news_world": "https://rss.walla.co.il/feed/2",
-    "walla_news_business": "https://rss.walla.co.il/feed/557",
-    "walla_news_opinions": "https://rss.walla.co.il/feed/4996",
-    "walla_news_law": "https://rss.walla.co.il/feed/4715",
+    "חדשות בארץ - כל החדשות והעדכונים 24/7 אונליין": "https://rss.walla.co.il/feed/1",
+    "מבזקי חדשות": "https://rss.walla.co.il/feed/22",
+    "כל החדשות העדכניות בתחומי צבא ושירותי הביטחון": "https://rss.walla.co.il/feed/2689",
+    "כל החדשות בתחום הפוליטי מדיני": "https://rss.walla.co.il/feed/2686",
+    "חדשות בעולם - כל העדכונים והדיווחים מסביב לעולם": "https://rss.walla.co.il/feed/2",
+    "כתבות בנושאי חדשות ועדכונים עסקיים": "https://rss.walla.co.il/feed/557",
+    "דעות ופרשנויות": "https://rss.walla.co.il/feed/4996",
+    "רישיונות, ביטוח ומשפט": "https://rss.walla.co.il/feed/4715",
 
-    "walla_sports_main": "https://rss.walla.co.il/feed/3",
-    "walla_sports_israeli_football": "https://rss.walla.co.il/feed/156",
-    "walla_sports_world_football": "https://rss.walla.co.il/feed/316",
-    "walla_sports_basketball": "https://rss.walla.co.il/feed/151",
-    "walla_sports_nba": "https://rss.walla.co.il/feed/175",
-    "walla_sports_israelis_nba": "https://rss.walla.co.il/feed/13444",
-    "walla_sports_tennis": "https://rss.walla.co.il/feed/152",
+    "וואלה כסף": "https://rss.walla.co.il/feed/3",
+    "כדורגל ישראלי - חדשות ועדכונים": "https://rss.walla.co.il/feed/156",
+    "כדורגל עולמי- חדשות ועדכונים": "https://rss.walla.co.il/feed/316",
+    "כדורסל: חדשות, סרטונים, כתבות": "https://rss.walla.co.il/feed/151",
+    "חדשות NBA": "https://rss.walla.co.il/feed/175",
+    "ישראלים בNBA": "https://rss.walla.co.il/feed/13444",
+    "טניס: חדשות, סרטונים וכתבות": "https://rss.walla.co.il/feed/152",
 
-    "walla_tech_main": "https://rss.walla.co.il/feed/6",
-    "walla_tech_reviews": "https://rss.walla.co.il/feed/4001",
-    "walla_tech_cyber": "https://rss.walla.co.il/feed/12765",
-    "walla_tech_startups": "https://rss.walla.co.il/feed/12766",
+    "סקירות": "https://rss.walla.co.il/feed/4001",
+    "המדריך המלא בנושא הסייבר": "https://rss.walla.co.il/feed/12765",
+    "המדריך המלא לסטארטאפים בעולם ההייטק הישראלי": "https://rss.walla.co.il/feed/12766",
 
-    "walla_food_main": "https://rss.walla.co.il/feed/9",
-    "walla_food_news": "https://rss.walla.co.il/feed/905",
-    "walla_food_recipes": "https://rss.walla.co.il/feed/2309",
+    "חדשות פוליטיקה וממשל - כל העדכונים, המידע והפרשנויות": "https://rss.walla.co.il/feed/9",
+    "חדשות האוכל": "https://rss.walla.co.il/feed/905",
+    "משחקי בישול": "https://rss.walla.co.il/feed/2309",
 
-    "walla_travel_main": "https://rss.walla.co.il/feed/14",
-    "walla_travel_israel": "https://rss.walla.co.il/feed/5735",
-    "walla_travel_world": "https://rss.walla.co.il/feed/779",
+    "מדינות אירופה והאיחוד האירופי - חדשות ועדכונים": "https://rss.walla.co.il/feed/14",
+    "המדריך המלא לטיולים בארץ: מסלולים, המלצות וטיפים": "https://rss.walla.co.il/feed/5735",
 
     # ======================
     # MAKO / MAARIV / HAMAL
     # ======================
-    "mako_news_military": "https://rcs.mako.co.il/rss/news-military.xml",
-    "maariv_news": "https://www.maariv.co.il/rss/rsschadashot",
-    "maariv_economy": "https://www.maariv.co.il/rss/rssfeedsasakim",
+    "חדשות - פוליטי": "https://rcs.mako.co.il/rss/news-military.xml",
+    "חדשות מהארץ והעולם": "https://www.maariv.co.il/rss/rsschadashot",
+    "כלכלה": "https://www.maariv.co.il/rss/rssfeedsasakim",
      # ======================
     # HAARETZ – Main
     # ======================

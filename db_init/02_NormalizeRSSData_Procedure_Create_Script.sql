@@ -1,3 +1,4 @@
+USE rss_project;
 DELIMITER $$
 
 DROP PROCEDURE IF EXISTS NormalizeRSSData$$

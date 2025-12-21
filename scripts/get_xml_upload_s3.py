@@ -15,7 +15,7 @@ from rss_feeds import RSS_FEEDS
 # ============================================================================
 # Configuration
 # ============================================================================
-RAW_DATA_BUCKET = "rss-raw-data"
+RAW_DATA_BUCKET = "rss-raw-data-test"
 
 # Request configuration
 REQUEST_TIMEOUT = 30  # seconds
@@ -75,6 +75,20 @@ def upload_to_s3(
         print(f"⚠️ No data to upload for file: {filename}")
         return
     
+    # Validate filename to prevent folder creation in S3
+    if not filename or filename.strip() == "":
+        raise ValueError(f"❌ Cannot upload: filename is empty")
+    
+    # S3 interprets keys ending with '/' as folders - prevent this
+    # Also remove any leading path separators
+    filename = filename.strip("/\\")
+    
+    # Ensure no path separators anywhere (would create nested folders or empty folders)
+    # This is a safety check - clean_for_filename should already handle this, but we double-check
+    if "/" in filename or "\\" in filename:
+        print(f"⚠️ Filename contains path separators (should not happen), replacing: {filename}")
+        filename = filename.replace("/", "-").replace("\\", "-")
+    
     try:
         s3.put_object(
             Bucket=bucket_name,
@@ -99,16 +113,20 @@ def clean_for_filename(text: str) -> str:
         text: Text to clean
         
     Returns:
-        Cleaned text safe for use as filename
+        Cleaned text safe for use as filename (never empty)
     """
     if not text:
         return "unknown"
 
     text = unicodedata.normalize("NFKC", text)
-    text = re.sub(r'[\\/:*?"<>|]', '-', text)
+    text = re.sub(r'[\\/:*?"<>|]', '-', text)  # Replace path separators and special chars
     text = re.sub(r'[\s,()]+', '_', text)
     text = re.sub(r'[^a-zA-Z0-9\u0590-\u05FF._-]', '', text)
     text = re.sub(r'[-_]+', '_', text).strip('_-.')
+    
+    # Ensure we never return an empty string (S3 would interpret this as a folder)
+    if not text or text == "":
+        return "unknown"
     
     return text
 
@@ -185,10 +203,16 @@ def extract_source_and_category(soup: BeautifulSoup, category: str) -> Tuple[str
     else:
         category_value = "unknown"
 
-    return (
-        clean_for_filename(source),
-        clean_for_filename(category_value),
-    )
+    source_clean = clean_for_filename(source)
+    category_clean = clean_for_filename(category_value)
+    
+    # Log warning if cleaning resulted in "unknown" to help debug
+    if source_clean == "unknown" and source != "unknown":
+        print(f"⚠️ Source '{source}' was cleaned to 'unknown'")
+    if category_clean == "unknown" and category_value != "unknown":
+        print(f"⚠️ Category '{category_value}' was cleaned to 'unknown'")
+    
+    return (source_clean, category_clean)
 
 
 def parse_rss_feed(url: str) -> Optional[BeautifulSoup]:
@@ -291,7 +315,21 @@ def process_rss_feed(
             return False
         
         source, category_clean = extract_source_and_category(soup, category)
+        
+        # Validate that source and category_clean are not empty (shouldn't happen, but safety check)
+        if not source or source == "":
+            source = "unknown"
+        if not category_clean or category_clean == "":
+            category_clean = "unknown"
+        
+        # Ensure filename doesn't contain path separators (would create folders in S3)
         filename = f"{source}_{category_clean}.xml"
+        filename = filename.replace("/", "-").replace("\\", "-")  # Extra safety: remove any remaining path separators
+        
+        # Final validation: ensure filename is valid
+        if not filename or filename == ".xml" or filename.startswith("/") or filename.startswith("\\"):
+            print(f"⚠️ Invalid filename generated: '{filename}', using fallback")
+            filename = f"unknown_{category}.xml".replace("/", "-")
         
         # Upload full feed XML
         xml_data = str(soup).encode("utf-8")

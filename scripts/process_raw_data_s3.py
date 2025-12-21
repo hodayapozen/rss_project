@@ -11,11 +11,13 @@ import json
 from sqlalchemy import create_engine, MetaData, text
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.engine import Engine
+from datetime import timedelta, datetime, timezone
+import pytz
 
 # ============================================================================
 # Configuration
 # ============================================================================
-RAW_DATA_BUCKET = "rss-raw-data"
+RAW_DATA_BUCKET = "rss-raw-data-test"
 TABLE_NAME = "rss_raw_items"
 
 # Database configuration
@@ -97,7 +99,6 @@ def parse_xml_item(item, source: str, category: str) -> Optional[Dict[str, Any]]
     guid = item.find("guid")
     if not guid:
         return None
-        
     guid_text = guid.text if guid else None
     title_elem = item.find("title")
     title = title_elem.text if title_elem else ""
@@ -105,7 +106,6 @@ def parse_xml_item(item, source: str, category: str) -> Optional[Dict[str, Any]]
     
     link_elem = item.find("link")
     link = link_elem.text if link_elem else ""
-    
     published_date_raw = None
     pub_date_elem = item.find("pubDate")
     if pub_date_elem:
@@ -113,6 +113,30 @@ def parse_xml_item(item, source: str, category: str) -> Optional[Dict[str, Any]]
     
     published_date = parse_published_date(published_date_raw)
     
+    # Skip items with future dates (likely parsing errors)
+    # Use Israel timezone for comparison
+    if published_date:
+        try:
+            parsed_date = parser.parse(published_date)
+            # Get current time in Israel timezone
+            israel_tz = pytz.timezone('Asia/Jerusalem')
+            now_israel = datetime.now(israel_tz)
+            
+            # If parsed date is timezone-naive, assume it's already in Israel time
+            if parsed_date.tzinfo is None:
+                if parsed_date > now_israel.replace(tzinfo=None):
+                    print(f"❌ Skipping item {guid_text} with future date: {published_date}")
+                    return None
+            else:
+                # Convert parsed date to Israel timezone for comparison
+                if parsed_date.tzinfo:
+                    parsed_date_israel = parsed_date.astimezone(israel_tz)
+                    if parsed_date_israel > now_israel:
+                        print(f"❌ Skipping item {guid_text} with future date: {published_date}")
+                        return None
+        except Exception as e:
+            # If date parsing fails, continue with the item
+            print(f"⚠️ Warning: Could not parse date '{published_date}' for item {guid_text}: {e}")
     description = extract_description(item)
     
     tags = extract_tags(item)
@@ -141,7 +165,10 @@ def parse_published_date(date_str: Optional[str]) -> Optional[str]:
     """
     if not date_str:
         return None
-    
+
+    if "GMT" in date_str.upper():
+        date_str = parser.parse(date_str) - timedelta(hours=1)
+        date_str = date_str.strftime("%Y-%m-%d %H:%M:%S")
     try:
         return parser.parse(date_str).strftime("%Y-%m-%d %H:%M:%S")
     except Exception:
@@ -214,7 +241,6 @@ def process_raw_data(xml_files: List[Tuple[str, str]]) -> pd.DataFrame:
         Cleaned DataFrame with RSS items
     """
     items_list = []
-    
     for file_name, file_data in xml_files:
         try:
             soup = BeautifulSoup(file_data, "xml")
@@ -237,7 +263,7 @@ def process_raw_data(xml_files: List[Tuple[str, str]]) -> pd.DataFrame:
     df = clean_dataframe(df)
     
     print(f"✅ Cleaned {len(df)} records")
-    df.to_csv("rss_raw_items_clean.csv", index=False)
+    
     
     return df
 

@@ -11,7 +11,7 @@ from utils import setup_logging, get_logger, init_s3_client, clean_for_filename
 from rss_feeds import RSS_FEEDS
 
 setup_logging()
-logger = get_logger(__name__)
+logger = get_logger("RSS_Extractor")
 
 
 # ============================================================================

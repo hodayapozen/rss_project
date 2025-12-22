@@ -16,7 +16,7 @@ import pytz
 from utils import setup_logging, get_logger, init_s3_client, upload_log_to_s3
 
 setup_logging()
-logger = get_logger(__name__)
+logger = get_logger("RSS_Processor")
 
 
 # ============================================================================
@@ -184,11 +184,10 @@ def parse_published_date(date_str: Optional[str], source: str) -> Optional[str]:
             
             # Source-specific adjustments
             if source == "walla":
-                # Walla uses GMT, convert to Israel time (UTC+2 or UTC+3)
-                israel_offset_hours = 3 if (dt.month >= 4 and dt.month <= 10) else 2
-                dt = dt.replace(tzinfo=None) + timedelta(hours=israel_offset_hours)
+                # Walla: subtract 1 hour from the time
+                dt = dt.replace(tzinfo=None) - timedelta(hours=1)
             elif source == "maariv":
-                # Maariv - similar handling
+                # Maariv - convert to Israel timezone
                 israel_offset_hours = 3 if (dt.month >= 4 and dt.month <= 10) else 2
                 dt = dt.replace(tzinfo=None) + timedelta(hours=israel_offset_hours)
             else:

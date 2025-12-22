@@ -13,6 +13,11 @@ from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.engine import Engine
 from datetime import timedelta, datetime, timezone
 import pytz
+from utils import setup_logging, get_logger, init_s3_client, upload_log_to_s3
+
+setup_logging()
+logger = get_logger(__name__)
+
 
 # ============================================================================
 # Configuration
@@ -39,9 +44,7 @@ DB_CONNECTION_STRING = (
 # ============================================================================
 # Client Initialization
 # ============================================================================
-def init_s3_client() -> boto3.client:
-    """Initialize and return S3 client."""
-    return boto3.client("s3")
+# Using shared init_s3_client from utils
 
 
 def init_mysql_engine(echo: bool = True) -> Engine:
@@ -73,9 +76,9 @@ def get_raw_data(s3: boto3.client, bucket_name: str) -> List[Tuple[str, str]]:
                 response = s3.get_object(Bucket=bucket_name, Key=key)
                 data = response["Body"].read().decode("utf-8")
                 xml_files.append((key, data))
-                print(f"📄 Processing {key}")
+                logger.info(f"Processing {key}")
             except Exception as e:
-                print(f"❌ Error processing {key}: {e}")
+                logger.error(f"Error processing {key}: {e}")
                 continue
                 
     return xml_files
@@ -111,7 +114,7 @@ def parse_xml_item(item, source: str, category: str) -> Optional[Dict[str, Any]]
     if pub_date_elem:
         published_date_raw = pub_date_elem.text
     
-    published_date = parse_published_date(published_date_raw)
+    published_date = parse_published_date(published_date_raw, source)
     
     # Skip items with future dates (likely parsing errors)
     # Use Israel timezone for comparison
@@ -125,18 +128,18 @@ def parse_xml_item(item, source: str, category: str) -> Optional[Dict[str, Any]]
             # If parsed date is timezone-naive, assume it's already in Israel time
             if parsed_date.tzinfo is None:
                 if parsed_date > now_israel.replace(tzinfo=None):
-                    print(f"❌ Skipping item {guid_text} with future date: {published_date}")
+                    logger.error(f"Skipping item {guid_text} with future date: {published_date}")
                     return None
             else:
                 # Convert parsed date to Israel timezone for comparison
                 if parsed_date.tzinfo:
                     parsed_date_israel = parsed_date.astimezone(israel_tz)
                     if parsed_date_israel > now_israel:
-                        print(f"❌ Skipping item {guid_text} with future date: {published_date}")
+                        logger.error(f"Skipping item {guid_text} with future date: {published_date}")
                         return None
         except Exception as e:
             # If date parsing fails, continue with the item
-            print(f"⚠️ Warning: Could not parse date '{published_date}' for item {guid_text}: {e}")
+            logger.warning(f"Could not parse date '{published_date}' for item {guid_text}: {e}")
     description = extract_description(item)
     
     tags = extract_tags(item)
@@ -153,12 +156,13 @@ def parse_xml_item(item, source: str, category: str) -> Optional[Dict[str, Any]]
     }
 
 
-def parse_published_date(date_str: Optional[str]) -> Optional[str]:
+def parse_published_date(date_str: Optional[str], source: str) -> Optional[str]:
     """
     Parse and format published date string.
     
     Args:
         date_str: Raw date string from RSS feed
+        source: Source name (for source-specific date handling)
         
     Returns:
         Formatted date string or None
@@ -166,12 +170,36 @@ def parse_published_date(date_str: Optional[str]) -> Optional[str]:
     if not date_str:
         return None
 
-    if "GMT" in date_str.upper():
-        date_str = parser.parse(date_str) - timedelta(hours=1)
-        date_str = date_str.strftime("%Y-%m-%d %H:%M:%S")
     try:
-        return parser.parse(date_str).strftime("%Y-%m-%d %H:%M:%S")
-    except Exception:
+        # Parse the date string to datetime object
+        dt = parser.parse(date_str)
+        
+        # Source-specific timezone handling
+        if "GMT" in date_str.upper() or "UTC" in date_str.upper() or dt.tzinfo is None:
+            # Assume UTC if timezone-naive or explicitly GMT/UTC
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            else:
+                dt = dt.astimezone(timezone.utc)
+            
+            # Source-specific adjustments
+            if source == "walla":
+                # Walla uses GMT, convert to Israel time (UTC+2 or UTC+3)
+                israel_offset_hours = 3 if (dt.month >= 4 and dt.month <= 10) else 2
+                dt = dt.replace(tzinfo=None) + timedelta(hours=israel_offset_hours)
+            elif source == "maariv":
+                # Maariv - similar handling
+                israel_offset_hours = 3 if (dt.month >= 4 and dt.month <= 10) else 2
+                dt = dt.replace(tzinfo=None) + timedelta(hours=israel_offset_hours)
+            else:
+                # Default: convert to Israel timezone
+                israel_offset_hours = 3 if (dt.month >= 4 and dt.month <= 10) else 2
+                dt = dt.replace(tzinfo=None) + timedelta(hours=israel_offset_hours)
+        
+        # Return as string in Israel timezone
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+    except Exception as e:
+        logger.warning(f"Error parsing date '{date_str}': {e}")
         return date_str
 
 
@@ -252,17 +280,17 @@ def process_raw_data(xml_files: List[Tuple[str, str]]) -> pd.DataFrame:
                 if parsed_item:
                     items_list.append(parsed_item)
         except Exception as e:
-            print(f"❌ Error processing file {file_name}: {e}")
+            logger.error(f"Error processing file {file_name}: {e}")
             continue
 
     if not items_list:
-        print("⚠️ No items found in XML files")
+        logger.warning("No items found in XML files")
         return pd.DataFrame()
 
     df = pd.DataFrame(items_list)
     df = clean_dataframe(df)
     
-    print(f"✅ Cleaned {len(df)} records")
+    logger.info(f"Cleaned {len(df)} records")
     
     
     return df
@@ -309,7 +337,7 @@ def upsert_to_mysql(df: pd.DataFrame, table_name: str = TABLE_NAME) -> None:
         table_name: Name of the MySQL table
     """
     if df.empty:
-        print("⚠️ DataFrame is empty, nothing to upsert")
+        logger.warning("DataFrame is empty, nothing to upsert")
         return
     
     engine = init_mysql_engine(echo=False)
@@ -333,9 +361,9 @@ def upsert_to_mysql(df: pd.DataFrame, table_name: str = TABLE_NAME) -> None:
                 )
                 conn.execute(stmt)
         
-        print(f"✅ Upserted {len(df)} records successfully!")
+        logger.info(f"Upserted {len(df)} records successfully!")
     except Exception as e:
-        print(f"❌ Error upserting to MySQL: {e}")
+        logger.error(f"Error upserting to MySQL: {e}")
         raise
     finally:
         engine.dispose()
@@ -353,9 +381,9 @@ def call_normalize_rss_data(procedure_name: str = "NormalizeRSSData") -> None:
     try:
         with engine.begin() as conn:
             conn.execute(text(f"CALL {procedure_name}()"))
-        print(f"✅ Successfully executed stored procedure: {procedure_name}")
+        logger.info(f"Successfully executed stored procedure: {procedure_name}")
     except Exception as e:
-        print(f"❌ Error executing stored procedure {procedure_name}: {e}")
+        logger.error(f"Error executing stored procedure {procedure_name}: {e}")
         raise
     finally:
         engine.dispose()
@@ -371,7 +399,7 @@ def main() -> None:
         xml_files = get_raw_data(s3, RAW_DATA_BUCKET)
         
         if not xml_files:
-            print("⚠️ No XML files found in S3 bucket")
+            logger.warning("No XML files found in S3 bucket")
             return
         
         df = process_raw_data(xml_files)
@@ -381,10 +409,11 @@ def main() -> None:
             # Execute stored procedure to normalize data
             call_normalize_rss_data()
         else:
-            print("⚠️ No data to upsert")
-            
+            logger.warning("No data to upsert")
+        upload_log_to_s3(s3)
     except Exception as e:
-        print(f"❌ Fatal error: {e}")
+        logger.error(f"Fatal error: {e}")
+        upload_log_to_s3(s3)
         raise
 
 

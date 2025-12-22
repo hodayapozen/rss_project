@@ -4,50 +4,43 @@ RSS_FEEDS = {
     # ======================
     "news_all": "https://www.ynet.co.il/Integration/StoryRss2.xml",
     "news_updates": "https://www.ynet.co.il/Integration/StoryRss1854.xml",
-    "news_blogus": "https://www.ynet.co.il/Integration/StoryRss3764.xml",
 
     "opinions_all": "https://www.ynet.co.il/Integration/StoryRss194.xml",
-    "consumer_all": "https://www.ynet.co.il/Integration/StoryRss5363.xml",
+    "צרכנות": "https://www.ynet.co.il/Integration/StoryRss5363.xml",
 
     "sports_all": "https://www.ynet.co.il/Integration/StoryRss3.xml",
     "sports_israeli_football": "https://www.ynet.co.il/Integration/StoryRss57.xml",
 
-    "culture_all": "https://www.ynet.co.il/Integration/StoryRss538.xml",
-    "culture_blog": "https://www.ynet.co.il/Integration/StoryRss4450.xml",
-    "culture_movies": "https://www.ynet.co.il/Integration/StoryRss3908.xml",
+    "תרבות ובידור": "https://www.ynet.co.il/Integration/StoryRss538.xml",
+    "הפרעת קשב": "https://www.ynet.co.il/Integration/StoryRss4450.xml",
+    "מעורבות": "https://www.ynet.co.il/Integration/StoryRss3908.xml",
 
     "involvement_all": "https://www.ynet.co.il/Integration/StoryRss3262.xml",
 
-    "women_all": "https://www.ynet.co.il/Integration/StoryRss4113.xml",
-    "women_home": "https://www.ynet.co.il/Integration/StoryRss4107.xml",
-    "women_relationships": "https://www.ynet.co.il/Integration/StoryRss4105.xml",
-    "women_spirituality": "https://www.ynet.co.il/Integration/StoryRss4104.xml",
-    "women_style": "https://www.ynet.co.il/Integration/StoryRss4111.xml",
-    "women_career": "https://www.ynet.co.il/Integration/StoryRss4335.xml",
-    "women_chef": "https://www.ynet.co.il/Integration/StoryRss1208.xml",
+    "home": "https://www.ynet.co.il/Integration/StoryRss4113.xml",
+    "relationships": "https://www.ynet.co.il/Integration/StoryRss4107.xml",
+    "style": "https://www.ynet.co.il/Integration/StoryRss4104.xml",
+    "laisha": "https://www.ynet.co.il/Integration/StoryRss4111.xml",
+    "health": "https://www.ynet.co.il/Integration/StoryRss1208.xml",
 
-    "health_all": "https://www.ynet.co.il/Integration/StoryRss4872.xml",
-    "health_animals": "https://www.ynet.co.il/Integration/StoryRss4879.xml",
-    "health_questions": "https://www.ynet.co.il/Integration/StoryRss4880.xml",
-    "health_environment": "https://www.ynet.co.il/Integration/StoryRss4926.xml",
+    "environment": "https://www.ynet.co.il/Integration/StoryRss4879.xml",
+    "animals": "https://www.ynet.co.il/Integration/StoryRss4880.xml",
 
-    "green_all": "https://www.ynet.co.il/Integration/StoryRss544.xml",
-    "green_environment": "https://www.ynet.co.il/Integration/StoryRss2424.xml",
-    "green_animals2": "https://www.ynet.co.il/Integration/StoryRss546.xml",
-    "green_questions2": "https://www.ynet.co.il/Integration/StoryRss571.xml",
+    "digital": "https://www.ynet.co.il/Integration/StoryRss544.xml",
+    "reviews": "https://www.ynet.co.il/Integration/StoryRss2424.xml",
+    "internet": "https://www.ynet.co.il/Integration/StoryRss546.xml",
+    "games": "https://www.ynet.co.il/Integration/StoryRss571.xml",
 
-    "tech_all": "https://www.ynet.co.il/Integration/StoryRss545.xml",
-    "tech_reviews": "https://www.ynet.co.il/Integration/StoryRss4540.xml",
-    "tech_internet": "https://www.ynet.co.il/Integration/StoryRss4541.xml",
-    "tech_games": "https://www.ynet.co.il/Integration/StoryRss786.xml",
-    "tech_pc_mag": "https://www.ynet.co.il/Integration/StoryRss550.xml",
-    "tech_connect": "https://www.ynet.co.il/Integration/StoryRss598.xml",
-    "tech_guides": "https://www.ynet.co.il/Integration/StoryRss3052.xml",
+    "מגזין": "https://www.ynet.co.il/Integration/StoryRss545.xml",
+    "guides": "https://www.ynet.co.il/Integration/StoryRss786.xml",
+    "cars": "https://www.ynet.co.il/Integration/StoryRss550.xml",
+    "vacations_and_travel": "https://www.ynet.co.il/Integration/StoryRss598.xml",
+    "parents": "https://www.ynet.co.il/Integration/StoryRss3052.xml",
 
-    "cars_all": "https://www.ynet.co.il/Integration/StoryRss975.xml",
-    "travel_all": "https://www.ynet.co.il/Integration/StoryRss4403.xml",
-    "parents_all": "https://www.ynet.co.il/Integration/StoryRss6.xml",
-    "food_all": "https://www.ynet.co.il/Integration/StoryRss2142.xml",
+    "food": "https://www.ynet.co.il/Integration/StoryRss975.xml",
+    "jewish": "https://www.ynet.co.il/Integration/StoryRss4403.xml",
+    "economy": "https://www.ynet.co.il/Integration/StoryRss6.xml",
+    "science": "https://www.ynet.co.il/Integration/StoryRss2142.xml",
 
     # ======================
     # YNETNEWS (EN)
@@ -98,36 +91,36 @@ RSS_FEEDS = {
      # ======================
     # HAARETZ – Main
     # ======================
-    "haaretz_main": "https://www.haaretz.co.il/srv/rss---feedly",
+    "main": "https://www.haaretz.co.il/srv/rss---feedly",
 
     # ======================
     # HAARETZ – Economy
     # ======================
-    "haaretz_labels": "http://haaretz.co.il/srv/lableshtz",
+    "labels": "http://haaretz.co.il/srv/lableshtz",
 
     # ======================
     # HAARETZ – Culture
     # ======================
-    "haaretz_culture": "https://www.haaretz.co.il/srv/htz---culture---rss",
-    "haaretz_books": "https://www.haaretz.co.il/srv/%D7%A1%D7%A4%D7%A8%D7%99%D7%9D--%D7%94%D7%90%D7%A8%D7%A5-rss",
+    "culture": "https://www.haaretz.co.il/srv/htz---culture---rss",
+    "books": "https://www.haaretz.co.il/srv/%D7%A1%D7%A4%D7%A8%D7%99%D7%9D--%D7%94%D7%90%D7%A8%D7%A5-rss",
 
     # ======================
     # HAARETZ – Opinion
     # ======================
-    "haaretz_opinion": "https://www.haaretz.co.il/srv/rss-opinion",
+    "opinion": "https://www.haaretz.co.il/srv/rss-opinion",
 
     # ======================
     # HAARETZ – Lifestyle
     # ======================
-    "haaretz_food": "https://www.haaretz.co.il/srv/%D7%90%D7%95%D7%9B%D7%9C--%D7%94%D7%90%D7%A8%D7%A5-rss",
-    "haaretz_health": "https://www.haaretz.co.il/srv/%D7%91%D7%A8%D7%99%D7%90%D7%95%D7%AA--%D7%94%D7%90%D7%A8%D7%A5-rss",
-    "haaretz_family": "https://www.haaretz.co.il/srv/rss---%D7%9E%D7%A9%D7%A4%D7%97%D7%94",
+    "food": "https://www.haaretz.co.il/srv/%D7%90%D7%95%D7%9B%D7%9C--%D7%94%D7%90%D7%A8%D7%A5-rss",
+    "health": "https://www.haaretz.co.il/srv/%D7%91%D7%A8%D7%99%D7%90%D7%95%D7%AA--%D7%94%D7%90%D7%A8%D7%A5-rss",
+    "family": "https://www.haaretz.co.il/srv/rss---%D7%9E%D7%A9%D7%A4%D7%97%D7%94",
 
     # ======================
     # HAARETZ – Sports
     # ======================
-    "haaretz_sports": "https://www.haaretz.co.il/srv/%D7%A1%D7%A4%D7%95%D7%A8%D7%98--%D7%94%D7%90%D7%A8%D7%A5-rss",
+    "sports": "https://www.haaretz.co.il/srv/%D7%A1%D7%A4%D7%95%D7%A8%D7%98--%D7%94%D7%90%D7%A8%D7%A5-rss",
 
-    "haaretz_travel": "https://www.haaretz.co.il/srv/%D7%98%D7%99%D7%95%D7%9C%D7%99%D7%9D---%D7%94%D7%90%D7%A8%D7%A5-rss",
-    "haaretz_weekend": "https://www.haaretz.co.il/srv/%D7%A1%D7%95%D7%A3-%D7%A9%D7%91%D7%95%D7%A2---%D7%94%D7%90%D7%A8%D7%A5-rss",
+    "travel": "https://www.haaretz.co.il/srv/%D7%98%D7%99%D7%95%D7%9C%D7%99%D7%9D---%D7%94%D7%90%D7%A8%D7%A5-rss",
+    "weekend": "https://www.haaretz.co.il/srv/%D7%A1%D7%95%D7%A3-%D7%A9%D7%91%D7%95%D7%A2---%D7%94%D7%90%D7%A8%D7%A5-rss",
 }

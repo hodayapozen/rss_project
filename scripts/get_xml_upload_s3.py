@@ -4,13 +4,15 @@ Fetch RSS feeds and upload XML data to S3 buckets.
 from typing import Tuple, Optional
 from bs4 import BeautifulSoup
 from datetime import datetime
-import boto3
 from urllib.parse import urlparse
-import re
-import unicodedata
+import boto3
 import requests
-
+from utils import setup_logging, get_logger, init_s3_client, clean_for_filename
 from rss_feeds import RSS_FEEDS
+
+setup_logging()
+logger = get_logger(__name__)
+
 
 # ============================================================================
 # Configuration
@@ -24,31 +26,7 @@ REQUEST_TIMEOUT = 30  # seconds
 # ============================================================================
 # S3 Client Initialization
 # ============================================================================
-def init_s3_client() -> boto3.client:
-    """
-    Initialize AWS S3 client and ensure buckets exist.
-    
-    Returns:
-        Boto3 S3 client
-    """
-    s3 = boto3.client("s3")
-    my_region = s3.meta.region_name or "us-east-1"
-
-    for bucket in [RAW_DATA_BUCKET]:
-        existing = [b["Name"] for b in s3.list_buckets().get("Buckets", [])]
-        if bucket not in existing:
-            print(f"🪣 Creating bucket: {bucket} in region: {my_region}")
-            if my_region == "us-east-1":
-                s3.create_bucket(Bucket=bucket)
-            else:
-                s3.create_bucket(
-                    Bucket=bucket,
-                    CreateBucketConfiguration={"LocationConstraint": my_region}
-                )
-        else:
-            print(f"🪣 Bucket already exists: {bucket}")
-
-    return s3
+# Using shared init_s3_client from utils with bucket creation
 
 
 # ============================================================================
@@ -72,12 +50,13 @@ def upload_to_s3(
         content_type: Content type for the object
     """
     if not xml_data:
-        print(f"⚠️ No data to upload for file: {filename}")
+        logger.warning(f"No data to upload for file: {filename}")
         return
     
     # Validate filename to prevent folder creation in S3
     if not filename or filename.strip() == "":
-        raise ValueError(f"❌ Cannot upload: filename is empty")
+        logger.error(f"Cannot upload: filename is empty")
+        raise ValueError(f"Cannot upload: filename is empty")
     
     # S3 interprets keys ending with '/' as folders - prevent this
     # Also remove any leading path separators
@@ -86,7 +65,7 @@ def upload_to_s3(
     # Ensure no path separators anywhere (would create nested folders or empty folders)
     # This is a safety check - clean_for_filename should already handle this, but we double-check
     if "/" in filename or "\\" in filename:
-        print(f"⚠️ Filename contains path separators (should not happen), replacing: {filename}")
+        logger.warning(f"Filename contains path separators (should not happen), replacing: {filename}")
         filename = filename.replace("/", "-").replace("\\", "-")
     
     try:
@@ -96,39 +75,16 @@ def upload_to_s3(
             Body=xml_data,
             ContentType=content_type
         )
-        print(f"✅ Uploaded {filename} to {bucket_name}/{filename}")
+        logger.info(f"Uploaded {filename} to {bucket_name}/{filename}")
     except Exception as e:
-        print(f"❌ Error uploading {filename}: {e}")
+        logger.error(f"Error uploading {filename}: {e}")
         raise
 
 
 # ============================================================================
 # Text Processing
 # ============================================================================
-def clean_for_filename(text: str) -> str:
-    """
-    Clean text for safe use as S3 object name (supports Hebrew).
-    
-    Args:
-        text: Text to clean
-        
-    Returns:
-        Cleaned text safe for use as filename (never empty)
-    """
-    if not text:
-        return "unknown"
-
-    text = unicodedata.normalize("NFKC", text)
-    text = re.sub(r'[\\/:*?"<>|]', '-', text)  # Replace path separators and special chars
-    text = re.sub(r'[\s,()]+', '_', text)
-    text = re.sub(r'[^a-zA-Z0-9\u0590-\u05FF._-]', '', text)
-    text = re.sub(r'[-_]+', '_', text).strip('_-.')
-    
-    # Ensure we never return an empty string (S3 would interpret this as a folder)
-    if not text or text == "":
-        return "unknown"
-    
-    return text
+# Using shared clean_for_filename from utils
 
 
 # ============================================================================
@@ -208,9 +164,9 @@ def extract_source_and_category(soup: BeautifulSoup, category: str) -> Tuple[str
     
     # Log warning if cleaning resulted in "unknown" to help debug
     if source_clean == "unknown" and source != "unknown":
-        print(f"⚠️ Source '{source}' was cleaned to 'unknown'")
+        logger.warning(f"Source '{source}' was cleaned to 'unknown'")
     if category_clean == "unknown" and category_value != "unknown":
-        print(f"⚠️ Category '{category_value}' was cleaned to 'unknown'")
+        logger.warning(f"Category '{category_value}' was cleaned to 'unknown'")
     
     return (source_clean, category_clean)
 
@@ -237,58 +193,11 @@ def parse_rss_feed(url: str) -> Optional[BeautifulSoup]:
 
         return soup
     except requests.exceptions.RequestException as e:
-        print(f"❌ Failed to fetch RSS feed from {url}: {e}")
+        logger.error(f"Failed to fetch RSS feed from {url}: {e}")
         return None
     except Exception as e:
-        print(f"❌ Error parsing RSS feed from {url}: {e}")
+        logger.error(f"Error parsing RSS feed from {url}: {e}")
         return None
-
-
-# ============================================================================
-# RSS Processing
-# ============================================================================
-# def process_feed_items(
-#     s3: boto3.client,
-#     soup: BeautifulSoup,
-#     source: str,
-#     category: str
-# ) -> int:
-#     """
-#     Process and upload individual RSS items to S3.
-    
-#     Args:
-#         s3: Boto3 S3 client
-#         soup: BeautifulSoup object of the RSS feed
-#         source: RSS source name
-#         category: RSS category
-        
-#     Returns:
-#         Number of items processed
-#     """
-#     channel = soup.find("channel")
-#     if not channel:
-#         return 0
-    
-#     items = channel.find_all("item")
-#     items_count = 0
-    
-#     for item in items:
-#         try:
-#             guid_elem = item.find("guid")
-#             if not guid_elem:
-#                 continue
-            
-#             guid = guid_elem.text
-#             item_name = f"{source}_{category}_{clean_for_filename(guid)}.xml"
-#             item_data = str(item).encode("utf-8")
-            
-#             upload_to_s3(s3, ITEMS_BUCKET, item_name, item_data)
-#             items_count += 1
-#         except Exception as e:
-#             print(f"⚠️ Error processing item: {e}")
-#             continue
-    
-#     return items_count
 
 
 def process_rss_feed(
@@ -308,7 +217,7 @@ def process_rss_feed(
         True if processing was successful, False otherwise
     """
     try:
-        print(f"📡 Fetching {category} from {url}")
+        logger.info(f"Fetching {category} from {url}")
         
         soup = parse_rss_feed(url)
         if not soup:
@@ -328,7 +237,7 @@ def process_rss_feed(
         
         # Final validation: ensure filename is valid
         if not filename or filename == ".xml" or filename.startswith("/") or filename.startswith("\\"):
-            print(f"⚠️ Invalid filename generated: '{filename}', using fallback")
+            logger.warning(f"Invalid filename generated: '{filename}', using fallback")
             filename = f"unknown_{category}.xml".replace("/", "-")
         
         # Upload full feed XML
@@ -342,7 +251,7 @@ def process_rss_feed(
         return True
         
     except Exception as e:
-        print(f"❌ Error processing {category}: {e}")
+        logger.error(f"Error processing {category}: {e}")
         return False
 
 
@@ -364,7 +273,7 @@ def get_rss_xml(s3: boto3.client) -> None:
         if process_rss_feed(s3, category, url):
             successful_feeds += 1
     
-    print(f"✨ Completed! Processed {successful_feeds}/{total_feeds} feeds successfully")
+    logger.info(f"Completed! Processed {successful_feeds}/{total_feeds} feeds successfully")
 
 
 # ============================================================================
@@ -373,10 +282,10 @@ def get_rss_xml(s3: boto3.client) -> None:
 def main() -> None:
     """Main execution function."""
     try:
-        s3 = init_s3_client()
+        s3 = init_s3_client(ensure_bucket=RAW_DATA_BUCKET)
         get_rss_xml(s3)
     except Exception as e:
-        print(f"❌ Fatal error: {e}")
+        logger.error(f"Fatal error: {e}")
         raise
 
 
